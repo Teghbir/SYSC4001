@@ -9,7 +9,27 @@ extern int current_time;
 struct Event {
     char type[10];       
     int event_number;     
-    int duration;        
+    int duration;  
+    char file_name[10];  
+
+};
+
+struct Memory_Partition{
+    int partition_number;
+    int size;
+    char code[10];  
+};
+
+struct PCB{
+    int pid;
+    char program_name[32];  
+    int memory_partition; // Index of the memory partition allocated.
+    int size;
+} ;
+
+struct External_Files{
+    char program_name[20];
+    int program_size;
 };
 
 //hardcoded vector table

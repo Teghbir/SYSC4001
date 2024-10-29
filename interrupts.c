@@ -8,6 +8,17 @@
 //initiazling the global variable
 int current_time = 0; 
 
+struct PCB pcb_table[25];
+int pcb_table_elements = 0; 
+
+struct Memory_Partition partitions[6];
+
+
+int exec_call = 1;
+int fork_call = 0;
+
+struct External_Files tracker[10];
+
 //reads the trace file, extracts the events from it and stores in the array of Event structures
 int readInputFile(const char *filename, struct Event *trace) {
     FILE *file = fopen(filename, "r");
@@ -20,13 +31,46 @@ int readInputFile(const char *filename, struct Event *trace) {
     int i = 0;
     char line[256];
     while (fgets(line, sizeof(line), file)) {
-        if (strncmp(line, "SYSCALL", 7) == 0 || strncmp(line, "END_IO", 6) == 0) {
+        if (strncmp(line, "SYSCALL", 7) == 0) {
             sscanf(line, "%s %d, %d", trace[i].type, &trace[i].event_number, &trace[i].duration);
+            strcpy(trace[i].file_name, ""); // FORK doesn't have an event number
         } else if (strncmp(line, "CPU", 3) == 0) {
             sscanf(line, "%[^,], %d", trace[i].type, &trace[i].duration);
             trace[i].event_number = -1;  // CPU doesn't have an event number
+            strcpy(trace[i].file_name, "");
+        } else if (strncmp(line, "FORK", 4) == 0) {
+            sscanf(line, "%[^,], %d", trace[i].type, &trace[i].duration);
+            trace[i].event_number = -1;  // FORK doesn't have an event number
+            strcpy(trace[i].file_name, "");
+        } else if (strncmp(line, "EXEC", 4) == 0) {
+            sscanf(line, "%s %s, %d", trace[i].type, &trace[i].file_name, &trace[i].duration);
+            trace[i].event_number = -1;  // FORK doesn't have an event number
         }
         i++;
+    }
+    //close the file and return the number of events
+    fclose(file);
+    return i;
+}
+
+//reads the trace file, extracts the events from it and stores in the array of Event structures
+int externalFilesInfo(const char *filename, struct External_Files *tracker) {
+    FILE *file = fopen(filename, "r");
+    //error handling
+    if (!file) {
+        printf("Cannot open the needed file: %s\n", filename);
+        return -1;
+    }
+    //go over each line until no more lines
+    int i = 0;
+    char line[256];
+    while (fgets(line, sizeof(line), file)) {
+        if (line[0] == '\n') {
+            continue; // Skip empty lines
+        }
+        // Use sscanf to extract program name and size
+        sscanf(line, "%[^,], %d", tracker[i].program_name, &tracker[i].program_size);
+        i++; // Increment the count of programs
     }
     //close the file and return the number of events
     fclose(file);
@@ -71,42 +115,180 @@ void handle_syscall(FILE *output_file, int event_number, int duration) {
     current_time += 1;
 }
 
-//to handle the command END_IO
-void handle_end_io(FILE *output_file, int event_number, int duration) {
-    fprintf(output_file, "%d, %d, check priority of interrupt\n", current_time, 1);
-    current_time += 1;
-    fprintf(output_file, "%d, %d, check if masked\n", current_time, 1);
-    current_time += 1;
+//to handle when the command is CPU
+void handle_fork(FILE *output_file, int event_number, int duration) {
+    fork_call++;
     fprintf(output_file, "%d, %d, switch to kernel mode\n", current_time, 1);
     current_time += 1;
-    fprintf(output_file, "%d, %d, context saved\n", current_time, 3);
-    current_time += 3;
+
+    //save/restore context gets a random value between 1-3ms
+    int num = rand() % 3 + 1;
+    fprintf(output_file, "%d, %d, context saved\n", current_time, num);
+    current_time += num;
+
     fprintf(output_file, "%d, %d, find vector %d in memory position 0x%04hhx\n", current_time, 1, event_number, event_number * 2);
     current_time += 1;
+
     fprintf(output_file, "%d, %d, load address 0x0%X into the PC\n", current_time, 1, vector_table[event_number]);
     current_time += 1;
-    fprintf(output_file, "%d, %d, END_IO\n", current_time, duration);
-    current_time += duration;
+
+    pcb_table[fork_call].pid = pcb_table[fork_call-1].pid + 1;
+    pcb_table[fork_call].memory_partition = pcb_table[fork_call-1].memory_partition;
+    strcpy(pcb_table[fork_call].program_name, pcb_table[fork_call - 1].program_name);
+    pcb_table[fork_call].size = pcb_table[fork_call-1].size;
+
+    fprintf(output_file, "%d, %d, FORK: copy parent PCB to child PCB\n", current_time, 1);
+    current_time += 1;
+
+
+    fprintf(output_file, "Current PCB:\n");
+    for (int i = 0; i < 4; i++) {
+        fprintf(output_file, "PID %d, Partition %d, Size %d MB, Name: %s\n", 
+                pcb_table[i].pid,           // Process ID
+                pcb_table[i].memory_partition, // Memory partition index
+                pcb_table[i].size,          // Size in MB
+                pcb_table[i].program_name); // Program name/status
+    }
+
+
+    fprintf(output_file, "%d, %d, scheduler called\n", current_time, 1);
+    current_time += 1;
+
+    fprintf(output_file, "%d, %d, IRET\n", current_time, 1);
+    current_time += 1;   
+
+    pcb_table_elements++;
+}
+
+//to handle when the command is CPU
+void handle_exec(FILE *output_file, char *file_name, int duration) {
+    fprintf(output_file, "%d, %d, switch to kernel mode\n", current_time, 1);
+    current_time += 1;
+
+    //save/restore context gets a random value between 1-3ms
+    int num = rand() % 3 + 1;
+    fprintf(output_file, "%d, %d, context saved\n", current_time, num);
+    current_time += num;
+
+
+    fprintf(output_file, "%d, %d, find vector 3 in memory position 0x0006\n", current_time, 1);
+    current_time += 1;
+
+    fprintf(output_file, "%d, %d, load address 0X042B into the PC\n", current_time, 1);
+    current_time += 1; 
+
+    fprintf(output_file, "%d, %d, EXEC: load %s of size %dmb\n", current_time, 1, file_name, tracker[exec_call-1].program_size); 
+    current_time += 1;
+
+    for (int i = 0; i < 6; i++) {
+        
+        if (tracker[exec_call-1].program_size==partitions[i].size){
+            fprintf(output_file, "%d, %d, found partition %d with %d of space\n", current_time, 1, i+1, partitions[i].size);
+            strcpy(partitions[i].code, file_name);
+        }
+    }
+
+    fprintf(output_file, "%d, %d, Updating PCB with new information", current_time, 1, file_name); 
+    current_time += 1;
+
+    if (strcpy(pcb_table[pcb_table_elements-1].program_name, "exec")){
+        strcpy(pcb_table[pcb_table_elements-1].program_name, file_name); 
+        pcb_table[pcb_table_elements-1].size = tracker[exec_call-1].program_size;
+    } else{
+        strcpy(pcb_table[pcb_table_elements].program_name, file_name);
+        pcb_table[pcb_table_elements].size = tracker[exec_call - 1].program_size;
+
+    }
+
+    
+    fprintf(output_file, "%d, %d, scheduler called\n", current_time, 1);
+    current_time += 1;
+
+
     fprintf(output_file, "%d, %d, IRET\n", current_time, 1);
     current_time += 1;
+
+    exec_call++;
+
+
+    fprintf(output_file, "Current PCB:\n");
+    for (int i = 0; i < 6; i++) {
+        fprintf(output_file, "PID %d, Partition %d, Size %d MB, Name: %s\n", 
+                pcb_table[i].pid,           // Process ID
+                pcb_table[i].memory_partition, // Memory partition index
+                pcb_table[i].size,          // Size in MB
+                pcb_table[i].program_name); // Program name/status
+    }
+
+    fprintf(output_file, "Current Memory Partitions:\n");
+    for (int i = 0; i < 6; i++) {
+        fprintf(output_file, "Partition %d: Size %d MB, Status: %s\n", 
+                partitions[i].partition_number, 
+                partitions[i].size, 
+                partitions[i].code);
+    }
 }
+
 
 //main function
 int main(int argc, char *argv[]) {
-    //ensures that the user runs the program with atleast 2 files
-    if (argc < 3) {
-        printf("Usage: %s <input_file> <output_file>\n", argv[0]);
+    //ensures that the user runs the program with atleast 3 files
+    if (argc < 4) {
+        printf("Usage: %s <input_file> <output_file> <external_files> \n", argv[0]);
         return 1;
     }
 
     //this is to seed the random number generator for different values everytime its run
     srand(time(NULL));
 
+    partitions[0].partition_number = 1;
+    partitions[0].size = 40;
+    strcpy(partitions[0].code, "free");
+
+    partitions[1].partition_number = 2;
+    partitions[1].size = 25;
+    strcpy(partitions[1].code, "free");
+
+    partitions[2].partition_number = 3;
+    partitions[2].size = 15;
+    strcpy(partitions[2].code, "free");
+
+    partitions[3].partition_number = 4;
+    partitions[3].size = 10;
+    strcpy(partitions[3].code, "free");
+
+    partitions[4].partition_number = 5;
+    partitions[4].size = 8;
+    strcpy(partitions[4].code, "free");
+
+    partitions[5].partition_number = 6;
+    partitions[5].size = 2;
+    strcpy(partitions[5].code, "free");
+
+
+    
+
+    pcb_table[0].pid = 1;
+    pcb_table[0].memory_partition = 6;
+    strcpy(pcb_table[0].program_name, "init");
+    pcb_table[0].size = 1;
+
+    pcb_table_elements++;
+
+    strcpy(partitions[5].code, "init");
+
     //initializes an array of 250 events 
     struct Event trace[250];
+
+
     //argv[1] is the name of the input file the user gave
     int num_events = readInputFile(argv[1], trace);
     if (num_events < 0) {
+        return 1;
+    }
+
+    int num_external_files = externalFilesInfo(argv[3], tracker); // Use argv[3] for the external file
+    if (num_external_files < 0) {
         return 1;
     }
 
@@ -124,12 +306,17 @@ int main(int argc, char *argv[]) {
             handle_cpu(output_file, trace[i].duration);
         } else if (strcmp(trace[i].type, "SYSCALL") == 0) {
             handle_syscall(output_file, trace[i].event_number, trace[i].duration);
-        } else if (strcmp(trace[i].type, "END_IO") == 0) {
-            handle_end_io(output_file, trace[i].event_number, trace[i].duration);
-        }
-    }
+        } else if (strcmp(trace[i].type, "FORK") == 0) {
+            handle_fork(output_file, trace[i].event_number, trace[i].duration);
+        } else if (strcmp(trace[i].type, "EXEC") == 0) {
+            handle_exec(output_file, trace[i].file_name, trace[i].duration);
+        } 
+    } // End of for loop
 
     //closes the output file
     fclose(output_file);
     return 0;
 }
+
+
+
