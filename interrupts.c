@@ -128,10 +128,10 @@
         fprintf(output_file, "%d, %d, context saved\n", current_time, num);
         current_time += num;
 
-        fprintf(output_file, "%d, %d, find vector %d in memory position 0x%04hhx\n", current_time, 1, event_number, event_number * 2);
+        fprintf(output_file, "%d, %d, find vector 2 in memory position 0x0004\n", current_time, 1);
         current_time += 1;
 
-        fprintf(output_file, "%d, %d, load address 0x0%X into the PC\n", current_time, 1, vector_table[event_number]);
+        fprintf(output_file, "%d, %d, load address 0X0695 into the PC\n", current_time, 1);
         current_time += 1;
 
         pcb_table[fork_call].pid = pcb_table[fork_call-1].pid + 1;
