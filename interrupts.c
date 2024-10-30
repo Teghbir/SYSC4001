@@ -134,10 +134,29 @@
         fprintf(output_file, "%d, %d, load address 0X0695 into the PC\n", current_time, 1);
         current_time += 1;
 
-        pcb_table[fork_call].pid = pcb_table[fork_call-1].pid + 1;
-        pcb_table[fork_call].memory_partition = pcb_table[fork_call-1].memory_partition;
-        strcpy(pcb_table[fork_call].program_name, pcb_table[fork_call - 1].program_name);
-        pcb_table[fork_call].size = pcb_table[fork_call-1].size;
+        
+
+
+
+        int index = pcb_table_elements - 1; // Start from the last element
+
+        // Keep going back in the table until you find an entry with the program name "init"
+        while (index >= 0 && strcmp(pcb_table[index].program_name, "init") != 0) {
+            index--; // Move backward
+        }
+
+        if (index >= 0) { // Found an entry with program name "init"
+            pcb_table[fork_call].pid = pcb_table[index].pid + 1;
+            pcb_table[fork_call].memory_partition = pcb_table[index].memory_partition;
+            strcpy(pcb_table[fork_call].program_name, pcb_table[index].program_name);
+            pcb_table[fork_call].size = pcb_table[index].size;
+        }
+
+
+
+
+
+
 
         fprintf(output_file, "%d, %d, FORK: copy parent PCB to child PCB\n", current_time, 1);
         current_time += 1;
