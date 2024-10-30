@@ -1,0 +1,59 @@
+0, 1, switch to kernel mode
+1, 2, context saved
+3, 1, find vector -1 in memory position 0x00fe
+4, 1, load address 0x00 into the PC
+5, 1, FORK: copy parent PCB to child PCB
+Current PCB:
+PID 1, Partition 6, Size 1 MB, Name: init
+PID 2, Partition 6, Size 1 MB, Name: init
+PID 0, Partition 0, Size 0 MB, Name: 
+PID 0, Partition 0, Size 0 MB, Name: 
+6, 1, scheduler called
+7, 1, IRET
+8, 1, switch to kernel mode
+9, 2, context saved
+11, 1, find vector -1 in memory position 0x00fe
+12, 1, load address 0x00 into the PC
+13, 1, FORK: copy parent PCB to child PCB
+Current PCB:
+PID 1, Partition 6, Size 1 MB, Name: init
+PID 2, Partition 6, Size 1 MB, Name: init
+PID 3, Partition 6, Size 1 MB, Name: init
+PID 0, Partition 0, Size 0 MB, Name: 
+14, 1, scheduler called
+15, 1, IRET
+16, 1, switch to kernel mode
+17, 1, context saved
+18, 1, find vector 3 in memory position 0x0006
+19, 1, load address 0X042B into the PC
+20, 1, EXEC: load program1, of size 10mb
+21, 1, found partition 4 with 10 of space
+21, 1, Updating PCB with new information22, 1, scheduler called
+23, 1, IRET
+24, 100, CPU execution
+Current PCB:
+PID 1, Partition 6, Size 1 MB, Name: init
+PID 2, Partition 6, Size 1 MB, Name: init
+PID 3, Partition 6, Size 10 MB, Name: program1,
+PID 0, Partition 0, Size 0 MB, Name: 
+PID 0, Partition 0, Size 0 MB, Name: 
+PID 0, Partition 0, Size 0 MB, Name: 
+Current Memory Partitions:
+Partition 1: Size 40 MB, Status: free
+Partition 2: Size 25 MB, Status: free
+Partition 3: Size 15 MB, Status: free
+Partition 4: Size 10 MB, Status: program1,
+Partition 5: Size 8 MB, Status: free
+Partition 6: Size 2 MB, Status: init
+124, 1, switch to kernel mode
+125, 3, context saved
+128, 1, find vector -1 in memory position 0x00fe
+129, 1, load address 0x00 into the PC
+130, 1, FORK: copy parent PCB to child PCB
+Current PCB:
+PID 1, Partition 6, Size 1 MB, Name: init
+PID 2, Partition 6, Size 1 MB, Name: init
+PID 3, Partition 6, Size 10 MB, Name: program1,
+PID 4, Partition 6, Size 10 MB, Name: program1,
+131, 1, scheduler called
+132, 1, IRET
