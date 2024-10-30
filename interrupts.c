@@ -17,6 +17,8 @@
     int exec_call = 1;
     int fork_call = 0;
 
+    FILE *system_status;
+
     struct External_Files tracker[10];
 
 
@@ -78,6 +80,8 @@
         return i;
     }
 
+    void handle_system_output(FILE *system_status);
+
 
     //to handle when the command is CPU
     void handle_cpu(FILE *output_file, int duration) {
@@ -115,6 +119,7 @@
 
         fprintf(output_file, "%d, %d, IRET\n", current_time, 1);
         current_time += 1;
+
     }
 
     //to handle when the command is CPU
@@ -154,10 +159,6 @@
 
 
 
-
-
-
-
         fprintf(output_file, "%d, %d, FORK: copy parent PCB to child PCB\n", current_time, 1);
         current_time += 1;
 
@@ -175,16 +176,19 @@
         fprintf(output_file, "%d, %d, scheduler called\n", current_time, 1);
         current_time += 1;
 
+
         fprintf(output_file, "%d, %d, IRET\n", current_time, 1);
         current_time += 1;   
 
         pcb_table_elements++;
+
+        handle_system_output(system_status);
     }
+
+
 
     //to handle when the command is CPU
     void handle_exec(FILE *output_file, char *file_name, int duration) {
-
-        
 
         fprintf(output_file, "%d, %d, switch to kernel mode\n", current_time, 1);
         current_time += 1;
@@ -244,28 +248,24 @@
             }
         } // End of for loop
 
-
         exec_call++;
 
+        handle_system_output(system_status);
+    }
 
-        fprintf(output_file, "Current PCB:\n");
+
+    void handle_system_output(FILE *system_status) {
+        fprintf(system_status, "Current time is %d \n", current_time);
+        fprintf(system_status, "Current PCB:\n");
         for (int i = 0; i < 6; i++) {
-            fprintf(output_file, "PID %d, Partition %d, Size %d MB, Name: %s\n", 
+            fprintf(system_status, "PID %d, Partition %d, Size %d MB, Name: %s\n", 
                     pcb_table[i].pid,           // Process ID
                     pcb_table[i].memory_partition, // Memory partition index
                     pcb_table[i].size,          // Size in MB
                     pcb_table[i].program_name); // Program name/status
         }
 
-        fprintf(output_file, "Current Memory Partitions:\n");
-        for (int i = 0; i < 6; i++) {
-            fprintf(output_file, "Partition %d: Size %d MB, Status: %s\n", 
-                    partitions[i].partition_number, 
-                    partitions[i].size, 
-                    partitions[i].code);
-        }
     }
-
 
     //main function
     int main(int argc, char *argv[]) {
@@ -331,7 +331,6 @@
         }
 
 
-
         //opens the output file
         //argv[2] is the second file name the user gave
         FILE *output_file = fopen(argv[2], "w");
@@ -339,6 +338,15 @@
             printf("Cannot open the output file: %s\n", argv[2]);
             return 1;
         }
+
+        system_status = fopen("system_status.txt", "w");
+        if (!system_status) {
+            printf("Cannot open the output file: %s\n", argv[2]);
+            return 1;
+        }
+
+        handle_system_output(system_status);
+
 
         //loops over each line of the array of events and then calls the command functions for each line depeding on the command 
         for (int i = 0; i < num_events; i++) {
@@ -357,6 +365,3 @@
         fclose(output_file);
         return 0;
     }
-
-
-

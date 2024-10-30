@@ -1,4 +1,12 @@
-Current time is 10 
+Current time is 0 
+Current PCB:
+PID 1, Partition 6, Size 1 MB, Name: init
+PID 0, Partition 0, Size 0 MB, Name: 
+PID 0, Partition 0, Size 0 MB, Name: 
+PID 0, Partition 0, Size 0 MB, Name: 
+PID 0, Partition 0, Size 0 MB, Name: 
+PID 0, Partition 0, Size 0 MB, Name: 
+Current time is 8 
 Current PCB:
 PID 1, Partition 6, Size 1 MB, Name: init
 PID 2, Partition 6, Size 1 MB, Name: init
@@ -6,7 +14,7 @@ PID 0, Partition 0, Size 0 MB, Name:
 PID 0, Partition 0, Size 0 MB, Name: 
 PID 0, Partition 0, Size 0 MB, Name: 
 PID 0, Partition 0, Size 0 MB, Name: 
-Current time is 0 
+Current time is 118 
 Current PCB:
 PID 1, Partition 6, Size 1 MB, Name: init
 PID 2, Partition 6, Size 10 MB, Name: program1,
@@ -14,19 +22,19 @@ PID 0, Partition 0, Size 0 MB, Name:
 PID 0, Partition 0, Size 0 MB, Name: 
 PID 0, Partition 0, Size 0 MB, Name: 
 PID 0, Partition 0, Size 0 MB, Name: 
-Current time is 15 
+Current time is 125 
 Current PCB:
 PID 1, Partition 6, Size 1 MB, Name: init
 PID 2, Partition 6, Size 10 MB, Name: program1,
-PID 3, Partition 6, Size 10 MB, Name: program1,
+PID 2, Partition 6, Size 1 MB, Name: init
 PID 0, Partition 0, Size 0 MB, Name: 
 PID 0, Partition 0, Size 0 MB, Name: 
 PID 0, Partition 0, Size 0 MB, Name: 
-Current time is 0 
+Current time is 266 
 Current PCB:
 PID 1, Partition 6, Size 1 MB, Name: init
 PID 2, Partition 6, Size 10 MB, Name: program1,
-PID 3, Partition 6, Size 15 MB, Name: program2,
+PID 2, Partition 6, Size 15 MB, Name: program2,
 PID 0, Partition 0, Size 0 MB, Name: 
 PID 0, Partition 0, Size 0 MB, Name: 
 PID 0, Partition 0, Size 0 MB, Name: 
