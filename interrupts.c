@@ -163,15 +163,6 @@
         current_time += 1;
 
 
-        fprintf(output_file, "Current PCB:\n");
-        for (int i = 0; i < 4; i++) {
-            fprintf(output_file, "PID %d, Partition %d, Size %d MB, Name: %s\n", 
-                    pcb_table[i].pid,           // Process ID
-                    pcb_table[i].memory_partition, // Memory partition index
-                    pcb_table[i].size,          // Size in MB
-                    pcb_table[i].program_name); // Program name/status
-        }
-
 
         fprintf(output_file, "%d, %d, scheduler called\n", current_time, 1);
         current_time += 1;
@@ -255,17 +246,26 @@
 
 
     void handle_system_output(FILE *system_status) {
-        fprintf(system_status, "Current time is %d \n", current_time);
-        fprintf(system_status, "Current PCB:\n");
-        for (int i = 0; i < 6; i++) {
-            fprintf(system_status, "PID %d, Partition %d, Size %d MB, Name: %s\n", 
-                    pcb_table[i].pid,           // Process ID
-                    pcb_table[i].memory_partition, // Memory partition index
-                    pcb_table[i].size,          // Size in MB
-                    pcb_table[i].program_name); // Program name/status
-        }
+    fprintf(system_status, "!-----------------------------------------------------------!\n");
+    fprintf(system_status, "Save Time: %d ms\n", current_time);
+    fprintf(system_status, "+--------------------------------------------+\n");
+    fprintf(system_status, "| PID | Program Name | Partition Number | Size |\n");
+    fprintf(system_status, "+--------------------------------------------+\n");
 
+    // Loop through each PCB entry and print the formatted row
+    for (int i = 0; i < 6; i++) {
+        if (pcb_table[i].pid != 0) {  // Only print non-empty entries
+            fprintf(system_status, "| %2d  | %12s | %15d | %4d |\n", 
+                    pcb_table[i].pid,
+                    pcb_table[i].program_name,
+                    pcb_table[i].memory_partition,
+                    pcb_table[i].size);
+        }
     }
+
+    fprintf(system_status, "+--------------------------------------------+\n");
+    fprintf(system_status, "!-----------------------------------------------------------!\n");
+}
 
     //main function
     int main(int argc, char *argv[]) {

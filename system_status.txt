@@ -1,40 +1,46 @@
-Current time is 0 
-Current PCB:
-PID 1, Partition 6, Size 1 MB, Name: init
-PID 0, Partition 0, Size 0 MB, Name: 
-PID 0, Partition 0, Size 0 MB, Name: 
-PID 0, Partition 0, Size 0 MB, Name: 
-PID 0, Partition 0, Size 0 MB, Name: 
-PID 0, Partition 0, Size 0 MB, Name: 
-Current time is 8 
-Current PCB:
-PID 1, Partition 6, Size 1 MB, Name: init
-PID 2, Partition 6, Size 1 MB, Name: init
-PID 0, Partition 0, Size 0 MB, Name: 
-PID 0, Partition 0, Size 0 MB, Name: 
-PID 0, Partition 0, Size 0 MB, Name: 
-PID 0, Partition 0, Size 0 MB, Name: 
-Current time is 118 
-Current PCB:
-PID 1, Partition 6, Size 1 MB, Name: init
-PID 2, Partition 6, Size 10 MB, Name: program1,
-PID 0, Partition 0, Size 0 MB, Name: 
-PID 0, Partition 0, Size 0 MB, Name: 
-PID 0, Partition 0, Size 0 MB, Name: 
-PID 0, Partition 0, Size 0 MB, Name: 
-Current time is 125 
-Current PCB:
-PID 1, Partition 6, Size 1 MB, Name: init
-PID 2, Partition 6, Size 10 MB, Name: program1,
-PID 2, Partition 6, Size 1 MB, Name: init
-PID 0, Partition 0, Size 0 MB, Name: 
-PID 0, Partition 0, Size 0 MB, Name: 
-PID 0, Partition 0, Size 0 MB, Name: 
-Current time is 266 
-Current PCB:
-PID 1, Partition 6, Size 1 MB, Name: init
-PID 2, Partition 6, Size 10 MB, Name: program1,
-PID 2, Partition 6, Size 15 MB, Name: program2,
-PID 0, Partition 0, Size 0 MB, Name: 
-PID 0, Partition 0, Size 0 MB, Name: 
-PID 0, Partition 0, Size 0 MB, Name: 
+!-----------------------------------------------------------!
+Save Time: 0 ms
++--------------------------------------------+
+| PID | Program Name | Partition Number | Size |
++--------------------------------------------+
+|  1  |         init |               6 |    1 |
++--------------------------------------------+
+!-----------------------------------------------------------!
+!-----------------------------------------------------------!
+Save Time: 7 ms
++--------------------------------------------+
+| PID | Program Name | Partition Number | Size |
++--------------------------------------------+
+|  1  |         init |               6 |    1 |
+|  2  |         init |               6 |    1 |
++--------------------------------------------+
+!-----------------------------------------------------------!
+!-----------------------------------------------------------!
+Save Time: 115 ms
++--------------------------------------------+
+| PID | Program Name | Partition Number | Size |
++--------------------------------------------+
+|  1  |         init |               6 |    1 |
+|  2  |    program1, |               6 |   10 |
++--------------------------------------------+
+!-----------------------------------------------------------!
+!-----------------------------------------------------------!
+Save Time: 124 ms
++--------------------------------------------+
+| PID | Program Name | Partition Number | Size |
++--------------------------------------------+
+|  1  |         init |               6 |    1 |
+|  2  |    program1, |               6 |   10 |
+|  2  |         init |               6 |    1 |
++--------------------------------------------+
+!-----------------------------------------------------------!
+!-----------------------------------------------------------!
+Save Time: 263 ms
++--------------------------------------------+
+| PID | Program Name | Partition Number | Size |
++--------------------------------------------+
+|  1  |         init |               6 |    1 |
+|  2  |    program1, |               6 |   10 |
+|  2  |    program2, |               6 |   15 |
++--------------------------------------------+
+!-----------------------------------------------------------!
