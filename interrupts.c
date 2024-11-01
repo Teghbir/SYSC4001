@@ -36,18 +36,19 @@
         while (fgets(line, sizeof(line), file)) {
             if (strncmp(line, "SYSCALL", 7) == 0) {
                 sscanf(line, "%s %d, %d", trace[i].type, &trace[i].event_number, &trace[i].duration);
-                strcpy(trace[i].file_name, ""); // FORK doesn't have an event number
+                strcpy(trace[i].file_name, "");
             } else if (strncmp(line, "CPU", 3) == 0) {
                 sscanf(line, "%[^,], %d", trace[i].type, &trace[i].duration);
-                trace[i].event_number = -1;  // CPU doesn't have an event number
+                trace[i].event_number = -1; 
                 strcpy(trace[i].file_name, "");
             } else if (strncmp(line, "FORK", 4) == 0) {
                 sscanf(line, "%[^,], %d", trace[i].type, &trace[i].duration);
                 trace[i].event_number = -1;  // FORK doesn't have an event number
                 strcpy(trace[i].file_name, "");
-            } else if (strncmp(line, "EXEC", 4) == 0) {
-                sscanf(line, "%s %s, %d", trace[i].type, &trace[i].file_name, &trace[i].duration);
-                trace[i].event_number = -1;  // FORK doesn't have an event number
+            } 
+            else if (strncmp(line, "EXEC", 4) == 0) {
+                sscanf(line, "%s %[^,], %d", trace[i].type, trace[i].file_name, &trace[i].duration);
+                trace[i].event_number = -1; 
             }
             i++;
         }
@@ -139,43 +140,46 @@
         fprintf(output_file, "%d, %d, load address 0X0695 into the PC\n", current_time, 1);
         current_time += 1;
 
-        
-
-
-
         int index = pcb_table_elements - 1; // Start from the last element
+        
 
         // Keep going back in the table until you find an entry with the program name "init"
         while (index >= 0 && strcmp(pcb_table[index].program_name, "init") != 0) {
             index--; // Move backward
         }
 
-        if (index >= 0) { // Found an entry with program name "init"
-            pcb_table[fork_call].pid = pcb_table[index].pid + 1;
+        if (index >= 0) { 
+            pcb_table[fork_call].pid = pcb_table[pcb_table_elements - 1].pid + 1;
+
             pcb_table[fork_call].memory_partition = pcb_table[index].memory_partition;
+
             strcpy(pcb_table[fork_call].program_name, pcb_table[index].program_name);
+
             pcb_table[fork_call].size = pcb_table[index].size;
         }
 
 
+        int num1 = rand() % (duration - 1);  // Random time for the first step
+        int num2 = duration - num1;          // Remaining time for the second step
 
-        fprintf(output_file, "%d, %d, FORK: copy parent PCB to child PCB\n", current_time, 1);
-        current_time += 1;
+        // FORK steps with the two randomly generated times
+        fprintf(output_file, "%d, %d, FORK: copy parent PCB to child PCB\n", current_time, num1);
+        current_time += num1;
 
-
-
-        fprintf(output_file, "%d, %d, scheduler called\n", current_time, 1);
-        current_time += 1;
+        fprintf(output_file, "%d, %d, scheduler called\n", current_time, num2);
+        current_time += num2;
 
 
         fprintf(output_file, "%d, %d, IRET\n", current_time, 1);
         current_time += 1;   
 
+
+
         pcb_table_elements++;
 
         handle_system_output(system_status);
-    }
 
+    }
 
 
     //to handle when the command is CPU
@@ -189,38 +193,56 @@
         fprintf(output_file, "%d, %d, context saved\n", current_time, num);
         current_time += num;
 
-
         fprintf(output_file, "%d, %d, find vector 3 in memory position 0x0006\n", current_time, 1);
         current_time += 1;
 
         fprintf(output_file, "%d, %d, load address 0X042B into the PC\n", current_time, 1);
         current_time += 1; 
 
-        fprintf(output_file, "%d, %d, EXEC: load %s of size %dmb\n", current_time, 1, file_name, tracker[exec_call-1].program_size); 
-        current_time += 1;
+        
+        int num1 = rand() % (duration - 4);          // Random time for the first step
+        int num2 = rand() % (duration - num1 - 3);   // Random time for the second step
+        int num3 = rand() % (duration - num1 - num2 - 2); // Random time for the third step
+        int num4 = rand() % (duration - num1 - num2 - num3 - 1); // Random time for the fourth step
+        int num5 = duration - num1 - num2 - num3 - num4; // Remaining time for the fifth step
+
+        fprintf(output_file, "%d, %d, EXEC: load %s of size %dmb\n", current_time, num1, file_name, tracker[exec_call-1].program_size); 
+        current_time += num1;
+
+        int partition;
 
         for (int i = 0; i < 6; i++) {
             
             if (tracker[exec_call-1].program_size==partitions[i].size){
-                fprintf(output_file, "%d, %d, found partition %d with %d of space\n", current_time, 1, i+1, partitions[i].size);
+                fprintf(output_file, "%d, %d, found partition %d with %d of space\n", current_time, num2, i+1, partitions[i].size);
+                partition = i+1;
                 strcpy(partitions[i].code, file_name);
+                current_time += num2;
+
+                fprintf(output_file, "%d, %d, partition %d marked as occupied\n", current_time, num3, i+1);
+                current_time += num3;
+
+
+
             }
         }
 
-        fprintf(output_file, "%d, %d, Updating PCB with new information", current_time, 1, file_name); 
-        current_time += 1;
+        fprintf(output_file, "%d, %d, Updating PCB with new information", current_time, num4, file_name); 
+        current_time += num4;
 
         if (strcpy(pcb_table[pcb_table_elements-1].program_name, "init")){
             strcpy(pcb_table[pcb_table_elements-1].program_name, file_name); 
             pcb_table[pcb_table_elements-1].size = tracker[exec_call-1].program_size;
+            pcb_table[pcb_table_elements-1].memory_partition = partition;
+
         } else{
             strcpy(pcb_table[pcb_table_elements].program_name, file_name);
             pcb_table[pcb_table_elements].size = tracker[exec_call - 1].program_size;
-
+            pcb_table[pcb_table_elements-1].memory_partition = partition;
         }
         
-        fprintf(output_file, "%d, %d, scheduler called\n", current_time, 1);
-        current_time += 1;
+        fprintf(output_file, "\n%d, %d, scheduler called\n", current_time, num5);
+        current_time += num5;
 
 
         fprintf(output_file, "%d, %d, IRET\n", current_time, 1);
@@ -239,9 +261,11 @@
             }
         } // End of for loop
 
+
         exec_call++;
 
         handle_system_output(system_status);
+
     }
 
 
