@@ -169,6 +169,7 @@
         fprintf(output_file, "%d, %d, scheduler called\n", current_time, num2);
         current_time += num2;
 
+        handle_system_output(system_status);
 
         fprintf(output_file, "%d, %d, IRET\n", current_time, 1);
         current_time += 1;   
@@ -177,7 +178,7 @@
 
         pcb_table_elements++;
 
-        handle_system_output(system_status);
+        
 
     }
 
@@ -244,6 +245,7 @@
         fprintf(output_file, "\n%d, %d, scheduler called\n", current_time, num5);
         current_time += num5;
 
+        handle_system_output(system_status);
 
         fprintf(output_file, "%d, %d, IRET\n", current_time, 1);
         current_time += 1;
@@ -264,7 +266,7 @@
 
         exec_call++;
 
-        handle_system_output(system_status);
+    
 
     }
 

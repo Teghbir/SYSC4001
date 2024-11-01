@@ -1,7 +1,0 @@
-FORK, 10
-FORK, 20
-FORK, 30
-EXEC program1, 50
-FORK, 15
-EXEC program2, 25
-FORK, 20
