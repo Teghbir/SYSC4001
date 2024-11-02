@@ -43,7 +43,6 @@ unsigned int vector_table[] = {
 //function prototypes
 void handle_cpu(FILE *output_file, int duration);
 void handle_syscall(FILE *output_file, int event_number, int duration);
-void handle_end_io(FILE *output_file, int event_number, int duration);
-
+void handle_system_output(FILE *system_status);
 #endif 
 
