@@ -21,7 +21,6 @@ struct PCB{
     int io_duration;
     int partition_number;
     char state[10]; // NEW, READY, RUNNING, WAITING, TERMINATED
-    //I realized how much i been avoiding padhai i think iss event ke baad underground hona padega😭
 } ;
 
 

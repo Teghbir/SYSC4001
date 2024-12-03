@@ -11,9 +11,6 @@
     //global varibale pcb_table is an array of structures of PCB
     struct PCB pcb_table[25];
 
-    //global variable pcb_table_elements 
-    int pcb_table_elements = 0; 
-
 
     //global varibale partitions is an array of structures of Memory_Partition
     struct Memory_Partition partitions[6];
@@ -72,6 +69,14 @@
 
 
     int allocate_memory(int pid, int size) {
+        // Check if the process is already allocated memory
+        for (int i = 0; i < 6; i++) {
+            if (partitions[i].occupied_by == pid) {
+                return partitions[i].partition_number; // Return the already allocated partition
+            }
+        }
+
+        // Find an available partition for the process
         for (int i = 0; i < 6; i++) {
             if (partitions[i].occupied_by == -1 && partitions[i].size >= size) {
                 partitions[i].occupied_by = pid;
@@ -90,62 +95,182 @@
         }
     }
 
-    void handle_FCFS(FILE *output_file) {
-        fprintf(output_file, "FCFS");
-        int completed_processes = 0;
-        while (completed_processes < pcb_table_elements) {
-            for (int i = 0; i < pcb_table_elements; i++) {
-                struct PCB *pcb = &pcb_table[i];
-                if (pcb->arrival_time == current_time) {
-                    continue;
-                }
-                strcpy(pcb->state, "READY");
-                int partition_index = allocate_memory(pcb->pid, pcb->size);
-                if (partition_index == -1) {
-                        // No memory available; keep in READY state
-                        continue;
-                } else{
-                    pcb->partition_number == partition_index;
-                    partitions[partition_index].partition_number = pcb ->pid;
-                }
-            }
-            for (int i = 0; i < pcb_table_elements; i++) {
-                struct PCB *pcb = &pcb_table[i];
-                if (strcmp(pcb->state, "READY")) {
-                    strcmp(pcb->state, "RUNNING");
-                    current_time+=pcb->io_frequency;
-                    strcpy(pcb->state, "WAITING");
-                    pcb->total_cpu_time-=pcb->io_frequency;
-                }
-            }
-            current_time++;
-        }
-    }
-
-    void handle_EP(FILE *output_file){
-        fprintf(output_file, "EP");
-
-    }
-
+    //this handles the outputs to the memory_status.txt file
     void handle_system_output(FILE *memory_status) {
         fprintf(memory_status, "+------------------------------------------------------------------------------------------+\n");
-        fprintf(memory_status, "| Time of Event | Memory Used | Partitions State | Total Free Memory | Usable Free Memory |");
-        fprintf(memory_status, "+------------------------------------------------------------------------------------------+\n");
-            for (int i = 0; i < 6; i++) {
-                fprintf(memory_status, "%d", partitions[i].occupied_by);
-                if (i < 5) {
-                    fprintf(memory_status,", ");
+        fprintf(memory_status, "Partitions State\n");
+        for (int i = 0; i < 6; i++) {
+            fprintf(memory_status, " %d", partitions[i].occupied_by);}
+        fprintf(memory_status, "\n+------------------------------------------------------------------------------------------+\n");
+    }
+
+    //FCFS implementation
+    void handle_FCFS(FILE *output_file, struct PCB pcb_table[], int num_events) {
+        int completion_time[num_events];
+        int current_time = 0;
+
+        fprintf(output_file, "+--------------------------------------------------+\n");
+        fprintf(output_file, "| Time of Transition | PID | Old State  | New State  |\n");
+        fprintf(output_file, "+--------------------------------------------------+\n");
+
+        for (int i = 0; i < num_events; i++) {
+            struct PCB *process = &pcb_table[i];
+
+            // Wait until the process arrives
+            if (current_time < process->arrival_time) {
+                current_time = process->arrival_time;
             }
+
+            // Process state transition: New → Running
+            fprintf(output_file, "| %18d | %3d | %9s | %10s |\n", 
+                    current_time, process->pid, "New", "Running");
+
+            // Allocate memory for the process
+            int partition = allocate_memory(process->pid, process->size);
+            if (partition == -1) {
+                fprintf(output_file, "Process %d cannot be allocated memory.\n", process->pid);
+                printf("Process %d cannot be allocated memory.\n", process->pid);
+                continue;
+            }
+            handle_system_output(memory_status);
+
+            // Simulate process execution
+            current_time += process->total_cpu_time;
+            completion_time[i] = current_time;
+
+            // Process state transition: Running → Terminated
+            fprintf(output_file, "| %18d | %3d | %9s | %10s |\n", 
+                    current_time, process->pid, "Running", "Terminated");
+
+            // Release memory after process completes
+            release_memory(process->pid);
+        }
+
+        fprintf(output_file, "+--------------------------------------------------+\n");
     }
 
 
-        
+    //External Priorities Implementation
+    void handle_EP(FILE *output_file, struct PCB pcb_table[], int num_events) {
+        int completion_time[num_events];
+        int current_time = 0;
+
+        fprintf(output_file, "+--------------------------------------------------+\n");
+        fprintf(output_file, "| Time of Transition | PID | Old State  | New State  |\n");
+        fprintf(output_file, "+--------------------------------------------------+\n");
+
+        for (int i = 0; i < num_events; i++) {
+            struct PCB *process = &pcb_table[i];
+
+            // Wait until the process arrives
+            if (current_time < process->arrival_time) {
+                current_time = process->arrival_time;
+            }
+
+            // Process state transition: New → Running
+            fprintf(output_file, "| %18d | %3d | %9s | %10s |\n", 
+                    current_time, process->pid, "New", "Running");
+
+            // Allocate memory for the process
+            int partition = allocate_memory(process->pid, process->size);
+            if (partition == -1) {
+                fprintf(output_file, "Process %d cannot be allocated memory.\n", process->pid);
+                printf("Process %d cannot be allocated memory.\n", process->pid);
+                continue;
+            }
+            handle_system_output(memory_status);
+
+            // Simulate process execution
+            current_time += process->total_cpu_time;
+            completion_time[i] = current_time;
+
+            // Process state transition: Running → Terminated
+            fprintf(output_file, "| %18d | %3d | %9s | %10s |\n", 
+                    current_time, process->pid, "Running", "Terminated");
+
+            // Release memory after process completes
+            release_memory(process->pid);
+        }
+
+        fprintf(output_file, "+--------------------------------------------------+\n");
     }
+
+
+    //RR implementation
+    void handle_RR(FILE *output_file, struct PCB pcb_table[], int num_events) {
+        int completion_time[num_events];
+        int current_time = 0;
+        int quantum = 100; // Time slice for Round Robin
+        int remaining_time[num_events]; // Track remaining CPU time for each process
+
+        // Initialize remaining time for each process
+        for (int i = 0; i < num_events; i++) {
+            remaining_time[i] = pcb_table[i].total_cpu_time;
+        }
+
+        fprintf(output_file, "+--------------------------------------------------+\n");
+        fprintf(output_file, "| Time of Transition | PID | Old State  | New State  |\n");
+        fprintf(output_file, "+--------------------------------------------------+\n");
+
+        int processes_remaining = num_events;
+        while (processes_remaining > 0) {
+            for (int i = 0; i < num_events; i++) {
+                struct PCB *process = &pcb_table[i];
+
+                // Skip completed processes
+                if (remaining_time[i] <= 0) {
+                    continue;
+                }
+
+                // Wait until the process arrives
+                if (current_time < process->arrival_time) {
+                    current_time = process->arrival_time;
+                }
+
+                // Allocate memory for the process if not already done
+                int partition = allocate_memory(process->pid, process->size);
+                if (partition == -1) {
+                    fprintf(output_file, "Process %d cannot be allocated memory.\n", process->pid);
+                    continue;
+                }
+                handle_system_output(memory_status);
+
+                // Transition to Running
+                fprintf(output_file, "| %18d | %3d | %9s | %10s |\n", 
+                        current_time, process->pid, 
+                        (remaining_time[i] == process->total_cpu_time) ? "New" : "Waiting", "Running");
+
+                // Execute process for the quantum or remaining time
+                int time_to_execute = (remaining_time[i] > quantum) ? quantum : remaining_time[i];
+                current_time += time_to_execute;
+                remaining_time[i] -= time_to_execute;
+
+                // Check completion
+                if (remaining_time[i] <= 0) {
+                    completion_time[i] = current_time;
+
+                    // Transition to Terminated
+                    fprintf(output_file, "| %18d | %3d | %9s | %10s |\n", 
+                            current_time, process->pid, "Running", "Terminated");
+
+                    release_memory(process->pid);
+                    processes_remaining--;
+                } else {
+                    // Transition to Waiting
+                    fprintf(output_file, "| %18d | %3d | %9s | %10s |\n", 
+                            current_time, process->pid, "Running", "Waiting");
+                }
+            }
+        }
+
+        fprintf(output_file, "+--------------------------------------------------+\n");
+    }
+
     
     //main function
     int main(int argc, char *argv[]) {
         //ensures that the user runs the program with atleast 3 files
-        if (argc < 3) {
+        if (argc < 2) {
             printf("Usage: %s <input_file> <scheduler> \n", argv[0]);
             return 1;
         }
@@ -207,14 +332,18 @@
             return 1;
         }
 
-        handle_system_output(memory_status);
 
         // Determine scheduler type and call the respective function
         if (strcmp(argv[2], "FCFS") == 0) {
-            handle_FCFS(output_file);
-        } if (strcmp(argv[2], "EP") == 0) {
-            handle_EP(output_file);
+            handle_FCFS(output_file, trace, num_events);
+        } else if (strcmp(argv[2], "EP") == 0) {
+            handle_EP(output_file, trace, num_events);
+        } else if (strcmp(argv[2], "RR") == 0) {
+            handle_RR(output_file, trace, num_events);
         }
+        
+
+        handle_system_output(memory_status);
 
         //closes the output file
         fclose(output_file);
