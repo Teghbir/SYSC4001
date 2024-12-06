@@ -18,22 +18,38 @@
     //file for the status table drawing
     FILE *memory_status;
 
+    int compare_pcb_EP(const void *a, const void *b) {
+        const struct PCB *pcbA = (const struct PCB *)a;
+        const struct PCB *pcbB = (const struct PCB *)b;
+
+        if (pcbA->total_cpu_time < pcbB->total_cpu_time) return -1;
+        if (pcbA->total_cpu_time > pcbB->total_cpu_time) return 1;
+
+        // If equal, compare by pid
+        if (pcbA->pid < pcbB->pid) return -1;
+        if (pcbA->pid > pcbB->pid) return 1;
+
+        return 0; // Equal
+    }
+
     int compare_pcb(const void *a, const void *b) {
-        struct PCB *pcbA = (struct PCB *)a;
-        struct PCB *pcbB = (struct PCB *)b;
+        const struct PCB *pcbA = (const struct PCB *)a;
+        const struct PCB *pcbB = (const struct PCB *)b;
 
-        // Compare by arrival_time first
-        if (pcbA->arrival_time != pcbB->arrival_time) {
-            return pcbA->arrival_time - pcbB->arrival_time;
-        }
+        if (pcbA->arrival_time < pcbB->arrival_time) return -1;
+        if (pcbA->arrival_time > pcbB->arrival_time) return 1;
 
-        // If arrival_time is the same, compare by pid
-        return pcbA->pid - pcbB->pid;
+        // If equal, compare by pid
+        if (pcbA->pid < pcbB->pid) return -1;
+        if (pcbA->pid > pcbB->pid) return 1;
+
+        return 0; // Equal
     }
 
 
     int readInputFile(const char *filename, struct PCB *pcb_table) {
         FILE *file = fopen(filename, "r");
+        //error handling
         if (!file) {
             printf("Cannot open the input file: %s\n", filename);
             return -1;
@@ -61,13 +77,11 @@
 
         fclose(file);
 
-        // Sort the PCB array based on arrival_time and pid
-        qsort(pcb_table, i, sizeof(struct PCB), compare_pcb);
 
         return i; // Return the number of PCBs populated
     }
 
-
+    //allocates memory in the partitions array
     int allocate_memory(int pid, int size) {
         // Check if the process is already allocated memory
         for (int i = 0; i < 6; i++) {
@@ -86,7 +100,7 @@
         return -1; // No available partition
     }
 
-    // Function to release memory occupied by a process
+    // Function to release memory occupied by a process in the partitons array
     void release_memory(int pid) {
         for (int i = 0; i < 6; i++) {
             if (partitions[i].occupied_by == pid) {
@@ -95,20 +109,47 @@
         }
     }
 
-    //this handles the outputs to the memory_status.txt file
+    //handles the output to memory_status.txt
     void handle_system_output(FILE *memory_status) {
-        fprintf(memory_status, "+------------------------------------------------------------------------------------------+\n");
-        fprintf(memory_status, "Partitions State\n");
+        // Calculate memory used, total free, and usable free memory
+        int total_free_memory = 0;
+        int used_memory = 0;
+        int usable_free_memory = 0;
+
         for (int i = 0; i < 6; i++) {
-            fprintf(memory_status, " %d", partitions[i].occupied_by);}
-        fprintf(memory_status, "\n+------------------------------------------------------------------------------------------+\n");
+            if (partitions[i].occupied_by == -1) {
+                total_free_memory += partitions[i].size;
+                usable_free_memory += partitions[i].size;  // Assuming all free memory is usable
+            } else {
+                used_memory += partitions[i].size;
+            }
+        }
+
+        // For the correct output formatting
+        fprintf(memory_status, "+-----------------------------------------------------------------------------------------------+\n");
+        fprintf(memory_status, "| Time of Event | Memory Used | Partitions State       | Total Free Memory | Usable Free Memory |\n");
+        fprintf(memory_status, "+-----------------------------------------------------------------------------------------------+\n");
+
+        // Following the format as the headers for the output
+        fprintf(memory_status, "| %14d | %10d | ", current_time, used_memory);
+        for (int i = 0; i < 6; i++) {
+            fprintf(memory_status, "%d", partitions[i].occupied_by);
+            if (i < 5) {
+                fprintf(memory_status, ", ");
+            }
+        }
+        fprintf(memory_status, " | %17d | %18d |\n", total_free_memory, usable_free_memory);
+        fprintf(memory_status, "+-----------------------------------------------------------------------------------------------+\n");
     }
+
+
+    //The following 3 functions are a simpler implementation of the three algorithms than what the document asks, as the team ran out of time, so it doesn't take the processes out while they are waiting for I/O
 
     //FCFS implementation
     void handle_FCFS(FILE *output_file, struct PCB pcb_table[], int num_events) {
+        qsort(pcb_table, num_events, sizeof(struct PCB), compare_pcb);
         int completion_time[num_events];
-        int current_time = 0;
-
+    
         fprintf(output_file, "+--------------------------------------------------+\n");
         fprintf(output_file, "| Time of Transition | PID | Old State  | New State  |\n");
         fprintf(output_file, "+--------------------------------------------------+\n");
@@ -116,7 +157,7 @@
         for (int i = 0; i < num_events; i++) {
             struct PCB *process = &pcb_table[i];
 
-            // Wait until the process arrives
+            // Waits for the processes to actually arrive
             if (current_time < process->arrival_time) {
                 current_time = process->arrival_time;
             }
@@ -132,6 +173,7 @@
                 printf("Process %d cannot be allocated memory.\n", process->pid);
                 continue;
             }
+            //outputs the change to the memory status file
             handle_system_output(memory_status);
 
             // Simulate process execution
@@ -147,13 +189,15 @@
         }
 
         fprintf(output_file, "+--------------------------------------------------+\n");
+
     }
 
 
-    //External Priorities Implementation
+    //External Priorities Implementation (shortest job first)
     void handle_EP(FILE *output_file, struct PCB pcb_table[], int num_events) {
+        qsort(pcb_table, num_events, sizeof(struct PCB), compare_pcb_EP);
         int completion_time[num_events];
-        int current_time = 0;
+       
 
         fprintf(output_file, "+--------------------------------------------------+\n");
         fprintf(output_file, "| Time of Transition | PID | Old State  | New State  |\n");
@@ -184,7 +228,7 @@
             current_time += process->total_cpu_time;
             completion_time[i] = current_time;
 
-            // Process state transition: Running → Terminated
+            // Process state transition: Running → Terminated at the end of execution
             fprintf(output_file, "| %18d | %3d | %9s | %10s |\n", 
                     current_time, process->pid, "Running", "Terminated");
 
@@ -199,8 +243,7 @@
     //RR implementation
     void handle_RR(FILE *output_file, struct PCB pcb_table[], int num_events) {
         int completion_time[num_events];
-        int current_time = 0;
-        int quantum = 100; // Time slice for Round Robin
+        int slice = 15; // Time slice for Round Robin
         int remaining_time[num_events]; // Track remaining CPU time for each process
 
         // Initialize remaining time for each process
@@ -235,13 +278,13 @@
                 }
                 handle_system_output(memory_status);
 
-                // Transition to Running
+                // Transition to Running and uses a ternary operator
                 fprintf(output_file, "| %18d | %3d | %9s | %10s |\n", 
                         current_time, process->pid, 
                         (remaining_time[i] == process->total_cpu_time) ? "New" : "Waiting", "Running");
 
-                // Execute process for the quantum or remaining time
-                int time_to_execute = (remaining_time[i] > quantum) ? quantum : remaining_time[i];
+                // Execute process for the remaining time
+                int time_to_execute = (remaining_time[i] > slice) ? slice : remaining_time[i];
                 current_time += time_to_execute;
                 remaining_time[i] -= time_to_execute;
 
@@ -305,9 +348,6 @@
         partitions[5].occupied_by = -1;
 
 
-    
-
-
         //initializes an array of 250 events 
         struct PCB trace[250];
 
@@ -316,7 +356,6 @@
         if (num_events < 0) {
             return 1;
         }
-
 
         FILE *output_file = fopen("execution.txt", "w");
         if (!output_file) {
@@ -341,11 +380,12 @@
         } else if (strcmp(argv[2], "RR") == 0) {
             handle_RR(output_file, trace, num_events);
         }
-        
 
         handle_system_output(memory_status);
 
         //closes the output file
         fclose(output_file);
+        fclose(memory_status);
+
         return 0;
     }
